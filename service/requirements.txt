@@ -1,0 +1,4 @@
+pdfminer.six>=20221105
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pandas>=2.0

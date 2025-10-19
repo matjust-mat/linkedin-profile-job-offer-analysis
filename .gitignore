@@ -1,0 +1,44 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+.eggs/
+.pytest_cache/
+.coverage*
+htmlcov/
+
+# Environments
+.venv/
+env/
+venv/
+*.env
+.env
+
+# Build / dist
+build/
+dist/
+wheelhouse/
+pip-wheel-metadata/
+*.log
+
+# Editors/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Project data outputs
+/pdfs/
+/uploads/
+/outputs/
+/data/
+/results.csv
+/candidates.csv
+/candidates_normalized.csv
+
+# Streamlit
+.streamlit/secrets.toml
