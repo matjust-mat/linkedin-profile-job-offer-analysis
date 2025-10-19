@@ -9,7 +9,13 @@ from quick_clean import clean_df
 from scorer import score_df
 
 app = FastAPI(title="Candidate Scorer API", version="1.0.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 NEEDED_COLS = ["name","age","phone","email","address","degree","years_experience",
                "skills","soft_skills","languages","profile_text","url"]

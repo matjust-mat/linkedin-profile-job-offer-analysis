@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Avaliador de Candidatos</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <header>
+        <h1>Avaliador de Candidatos</h1>
+        <div class="api-url">
+            <label for="apiBase">API</label>
+            <input id="apiBase" type="url" value="http://localhost:8000" />
+        </div>
+    </header>
+
+    <main>
+        <section class="panel">
+            <form id="scoreForm">
+                <div class="row">
+                    <div class="field">
+                        <div class="field-head">
+                            <label for="files">PDFs</label>
+                            <button id="infoBtn" type="button" aria-haspopup="dialog" aria-controls="infoModal"
+                                title="Como gerar o PDF no LinkedIn">ℹ︎</button>
+                        </div>
+                        <input id="files" type="file" accept="application/pdf" multiple />
+                        <div id="drop" class="drop">Arraste e solte PDFs aqui</div>
+                        <ul id="fileList"></ul>
+                        <button id="fileToggle" type="button" hidden>Mostrar mais</button>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="field">
+                        <label for="degree">grau</label>
+                        <input id="degree" placeholder="Bacharel" />
+                    </div>
+                    <div class="field">
+                        <label for="req">obrigatórios</label>
+                        <input id="req" placeholder="java, spring boot, aws" />
+                    </div>
+                    <div class="field">
+                        <label for="nice">desejáveis</label>
+                        <input id="nice" placeholder="kafka, docker" />
+                    </div>
+                    <div class="field">
+                        <label for="soft_req">soft obrigatórios</label>
+                        <input id="soft_req" placeholder="communication,ownership" />
+                    </div>
+                    <div class="field">
+                        <label for="soft_nice">soft desejáveis</label>
+                        <input id="soft_nice" placeholder="negotiation" />
+                    </div>
+                    <div class="field">
+                        <label for="langs">idiomas</label>
+                        <input id="langs" placeholder="english,spanish" />
+                    </div>
+                    <div class="field">
+                        <label for="min_years">anos mínimos</label>
+                        <input id="min_years" type="number" step="0.1" value="0" />
+                    </div>
+                    <div class="field">
+                        <label for="notes">observações</label>
+                        <input id="notes" placeholder="fintech, pagamentos" />
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button id="submitBtn" type="submit">Pontuar</button>
+                    <span id="status" role="status"></span>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <div class="toolbar">
+                <div id="count"></div>
+                <button id="downloadJson" type="button" disabled>Baixar JSON</button>
+                <input id="filter" placeholder="Filtrar por nome ou skill" />
+            </div>
+            <div class="table-wrap">
+                <table id="results">
+                    <thead>
+                        <tr>
+                            <th data-sort="name">Nome</th>
+                            <th data-sort="score">Score</th>
+                            <th>Anos</th>
+                            <th>Skills</th>
+                            <th>Idiomas</th>
+                            <th>Motivo</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div id="infoModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle" hidden>
+        <div class="modal-content" role="document">
+            <button class="modal-close" type="button" aria-label="Fechar">×</button>
+            <h2 id="infoTitle">Exportar perfil do LinkedIn para PDF</h2>
+            <ol>
+                <li>Abra o perfil da pessoa no LinkedIn em um navegador no desktop.</li>
+                <li>No topo do perfil, clique em <strong>Mais</strong> (ou no ícone de três pontos).</li>
+                <li>Selecione <strong>Salvar em PDF</strong>. Aguarde o LinkedIn gerar o arquivo.</li>
+                <li>Salve o PDF localmente. Repita para cada perfil desejado.</li>
+            </ol>
+            <h3>Observações</h3>
+            <ul>
+                <li>Se “Salvar em PDF” não aparecer, use o modo desktop do site ou teste outro navegador.</li>
+                <li>A língua do PDF segue a língua de exibição do perfil. Altere a língua no perfil antes, se
+                    necessário.</li>
+                <li>Garanta que as seções estejam expandidas (Sobre, Experiências, Formação) para PDFs mais completos.
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <footer>
+        <small>Arrastar e soltar habilitado. A API já permite CORS.</small>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
