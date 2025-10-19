@@ -1,30 +1,20 @@
-# Output CSV columns:
-# name,age,phone,email,address,degree,years_experience,skills,soft_skills,languages,profile_text,url
-# PT/EN aware. Robust against noisy PDFs. Tuned for LinkedIn "Save as PDF" layout.
-
-import re, os, sys, glob, argparse
+import re, os, glob
 import pandas as pd
 from pdfminer.high_level import extract_text
 
 # ---------------- vocab ----------------
 HARD_SKILLS = [
-    # general
-    "software development", "graphic design", "ui design", "ux design",
-    # backend
-    "java", "spring", "spring boot", "quarkus", "hibernate", "jpa",
-    "kotlin", "scala", "python", "django", "flask", "fastapi",
-    "node", "node.js", "express", "nestjs", "go", "golang", "c++", "c#",
-    ".net", "asp.net", "php", "laravel", "symfony", "ruby", "rails",
-    # frontend
-    "javascript", "typescript", "react", "next.js", "angular", "vue",
-    # data
-    "sql", "postgresql", "mysql", "mariadb", "sql server", "oracle",
-    "mongodb", "redis", "kafka", "spark", "hadoop",
-    # devops
-    "docker", "kubernetes", "helm", "aws", "gcp", "azure",
-    "terraform", "ansible", "github actions", "gitlab ci", "ci/cd",
+    "software development","graphic design","ui design","ux design",
+    "java","spring","spring boot","quarkus","hibernate","jpa",
+    "kotlin","scala","python","django","flask","fastapi",
+    "node","node.js","express","nestjs","go","golang","c++","c#",
+    ".net","asp.net","php","laravel","symfony","ruby","rails",
+    "javascript","typescript","react","next.js","angular","vue",
+    "sql","postgresql","mysql","mariadb","sql server","oracle",
+    "mongodb","redis","kafka","spark","hadoop",
+    "docker","kubernetes","helm","aws","gcp","azure",
+    "terraform","ansible","github actions","gitlab ci","ci/cd",
 ]
-
 HARD_SKILLS = [s for s in HARD_SKILLS if len(s) > 1]
 
 SOFT_SKILLS = [
@@ -32,7 +22,6 @@ SOFT_SKILLS = [
     "adaptability","flexibility","ownership","proactivity","creativity",
     "time management","negotiation","empathy","collaboration","conflict resolution",
     "decision making","attention to detail","organization","resilience",
-    # PT
     "comunicação","trabalho em equipe","liderança","resolução de problemas",
     "pensamento crítico","adaptabilidade","flexibilidade","senso de dono",
     "proatividade","criatividade","gestão do tempo","negociação","empatia",
@@ -55,12 +44,12 @@ LANG_MAP = {
     "hindi":"hindi",
 }
 LEVEL_ALIASES = {
-    "native": ["native","nativo","língua materna","lingua materna","mother tongue"],
-    "fluent": ["fluent","fluente","full professional","profissional completo"],
-    "advanced": ["advanced","avançado","avancado","c2","c1","upper intermediate"],
-    "intermediate": ["intermediate","intermediário","intermediario","b2","b1"],
-    "professional": ["professional working","profissional"],
-    "basic": ["basic","básico","basico","beginner","iniciante","a2","a1","limited"],
+    "native":["native","nativo","língua materna","lingua materna","mother tongue"],
+    "fluent":["fluent","fluente","full professional","profissional completo"],
+    "advanced":["advanced","avançado","avancado","c2","c1","upper intermediate"],
+    "intermediate":["intermediate","intermediário","intermediario","b2","b1"],
+    "professional":["professional working","profissional"],
+    "basic":["basic","básico","basico","beginner","iniciante","a2","a1","limited"],
 }
 LEVEL_RANK = {"":0,"basic":1,"professional":2,"intermediate":3,"advanced":4,"fluent":5,"native":6}
 
@@ -72,7 +61,6 @@ COUNTRY_RE = re.compile(r"\b(" + "|".join(COUNTRIES) + r")\b", re.I)
 
 # ---------------- regex ----------------
 EMAIL_RE = re.compile(r"[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}", re.I)
-# BR-friendly phone. Require 10–15 digits. Ignore things inside URLs.
 PHONE_DIGITS_RE = re.compile(r"(?:\+?\d[\d\-\s\(\)]{8,}\d)")
 LINKEDIN_URL_RE = re.compile(r"https?://(?:www\.)?linkedin\.com/[^\s)]+", re.I)
 
@@ -101,9 +89,6 @@ def first_match(rex, text, default=""):
     m = rex.search(text)
     return m.group(0) if m else default
 
-def clean_urls(text: str) -> str:
-    return LINKEDIN_URL_RE.sub("", text)
-
 def extract_email(text: str) -> str:
     return first_match(EMAIL_RE, text)
 
@@ -129,7 +114,7 @@ def extract_phone(text: str) -> str:
         dd, rest = d[:2], d[2:]
         if len(rest) == 9:
             return f"+55 ({dd}) {rest[:5]}-{rest[5:]}"
-        elif len(rest) == 8:
+        if len(rest) == 8:
             return f"+55 ({dd}) {rest[:4]}-{rest[4:]}"
     return d
 
@@ -145,8 +130,7 @@ def extract_address(text_lines: list[str], full_text: str) -> str:
     return ""
 
 def canonical_level(raw: str) -> str:
-    if not raw:
-        return ""
+    if not raw: return ""
     r = raw.lower()
     for k, variants in LEVEL_ALIASES.items():
         for v in variants:
@@ -163,15 +147,12 @@ def extract_languages(text: str) -> dict:
     toks = block.split()
     low = [t.lower() for t in toks]
     for i, tok in enumerate(low):
-        if tok not in LANG_MAP:
-            continue
+        if tok not in LANG_MAP: continue
         lang = LANG_MAP[tok]
         window = " ".join(low[i+1:i+8])
         lvl = canonical_level(window)
         prev = langs.get(lang, "")
-        rank_new = LEVEL_RANK.get(lvl, 0)
-        rank_old = LEVEL_RANK.get(prev, 0)
-        if rank_new > rank_old:
+        if LEVEL_RANK.get(lvl,0) > LEVEL_RANK.get(prev,0):
             langs[lang] = lvl or prev
         else:
             langs.setdefault(lang, prev)
@@ -187,8 +168,7 @@ def extract_degree(full_text: str) -> str:
             continue
         if re.search(r"(bachelor|master|mba|b\.?tech|bacharel|licenciatura|mestrado|doutor)", l, re.I):
             cand = l.strip()
-            if "page" in cand.lower(): 
-                continue
+            if "page" in cand.lower(): continue
             if 15 <= len(cand) <= 140 and len(cand) > len(best):
                 best = cand
     return best
@@ -201,19 +181,12 @@ def extract_years(full_text: str) -> str:
         return str(val).rstrip("0").rstrip(".")
     m2 = YEARS_SIMPLE_RE.search(full_text)
     if m2:
-        y = int(m2.group(1))
-        frac = m2.group(2)
-        if frac:
-            return f"{y}.{frac}"
-        return str(y)
+        y = int(m2.group(1)); frac = m2.group(2)
+        return f"{y}.{frac}" if frac else str(y)
     return ""
 
-def tokenize(text: str):
-    return re.findall(r"[a-zA-ZÀ-ÿ0-9\.\+\#]+", text.lower())
-
 def contains_phrase(text_lc: str, phrase: str) -> bool:
-    p = re.escape(phrase.lower())
-    p = p.replace("\\ ", r"\s+")
+    p = re.escape(phrase.lower()).replace("\\ ", r"\s+")
     return re.search(rf"(?<![A-Za-z0-9#\+]){p}(?![A-Za-z0-9#\+])", text_lc) is not None
 
 def extract_skills(full_text: str):
@@ -226,16 +199,14 @@ def extract_skills(full_text: str):
         for token in re.split(r"[,\n•\-\u2022]", blob):
             tok = token.strip()
             if 2 <= len(tok) <= 40:
-                if tok in SOFT_SKILLS and tok not in soft:
-                    soft.append(tok)
-                if tok in HARD_SKILLS and tok not in hard:
-                    hard.append(tok)
+                if tok in SOFT_SKILLS and tok not in soft: soft.append(tok)
+                if tok in HARD_SKILLS and tok not in hard: hard.append(tok)
     return sorted(hard), sorted(soft)
 
 def strip_boilerplate(text: str) -> str:
-    t = text
-    t = re.sub(r"(contact|contato)\b.*?(?=(experience|experiência|education|formação)\b)", "", t, flags=re.I | re.S)
+    t = re.sub(r"(contact|contato)\b.*?(?=(experience|experiência|education|formação)\b)", "", text, flags=re.I | re.S)
     t = re.sub(r"\btop\s+skills\b.*?(?=\n|$)", "", t, flags=re.I)
+    t = re.sub(r"Page\s+\d+\s+of\s+\d+", "", t, flags=re.I)
     t = LINKEDIN_URL_RE.sub("", t)
     t = EMAIL_RE.sub("", t)
     return norm(t)
@@ -244,22 +215,10 @@ def name_from_email(email: str) -> str:
     if not email: return ""
     local = email.split("@",1)[0]
     local = re.sub(r"\d+", " ", local)
-    parts = re.split(r"[._\-]+", local)
-    parts = [p for p in parts if p and len(p) > 1]
+    parts = [p for p in re.split(r"[._\-]+", local) if p and len(p) > 1]
     if len(parts) >= 2:
         return " ".join(w.capitalize() for w in parts[:4])
     return ""
-
-def name_from_url(url: str) -> str:
-    if not url:
-        return ""
-    m = re.search(r"/in/([^/?#]+)", url)
-    if not m:
-        return ""
-    slug = m.group(1)
-    slug = re.sub(r"-\d{4,}$", "", slug)
-    name = slug.replace("-", " ").strip()
-    return " ".join(w.capitalize() for w in name.split())
 
 def name_from_url(url: str) -> str:
     m = re.search(r"/in/([^/?#]+)", url or "")
@@ -304,11 +263,8 @@ def parse_pdf(path: str) -> dict:
     hard, soft = extract_skills(text)
     langs = extract_languages(text)
     langs_str = "; ".join(f"{k}: {v or 'unspecified'}" for k, v in sorted(langs.items()))
-
     age = extract_age(text)
-
-    prof = strip_boilerplate(text)
-    prof = prof[:5000]
+    prof = strip_boilerplate(text)[:5000]
 
     return {
         "name": name,
@@ -325,7 +281,6 @@ def parse_pdf(path: str) -> dict:
         "url": url or "",
     }
 
-# -------------- IO --------------
 def iter_pdf_paths(in_dir: str, pattern: str):
     pats = [pattern]
     if pattern.lower().endswith(".pdf"):
@@ -334,30 +289,12 @@ def iter_pdf_paths(in_dir: str, pattern: str):
         for path in glob.glob(os.path.join(in_dir, p)):
             yield path
 
-def run(in_dir: str, out_csv: str, pattern: str):
-    rows = []
-    count = 0
-    for path in iter_pdf_paths(in_dir, pattern):
-        count += 1
-        rows.append(parse_pdf(path))
+def run_to_df(in_dir: str, pattern: str = "*.pdf") -> pd.DataFrame:
+    rows = [parse_pdf(path) for path in iter_pdf_paths(in_dir, pattern)]
     df = pd.DataFrame(rows)
     cols = ["name","age","phone","email","address","degree","years_experience",
             "skills","soft_skills","languages","profile_text","url"]
     for c in cols:
         if c not in df.columns:
             df[c] = ""
-    df = df[cols]
-    df.to_csv(out_csv, index=False)
-    print(f"Wrote {out_csv} with {len(df)} rows from {count} files matched by pattern '{pattern}'")
-
-# -------------- cli --------------
-def main():
-    ap = argparse.ArgumentParser(description="Ingest LinkedIn-like profile PDFs into CSV.")
-    ap.add_argument("pdf_dir")
-    ap.add_argument("out_csv")
-    ap.add_argument("--pattern", default="*.pdf", help='e.g. "Profile*.pdf"')
-    args = ap.parse_args()
-    run(args.pdf_dir, args.out_csv, args.pattern)
-
-if __name__ == "__main__":
-    main()
+    return df[cols]
