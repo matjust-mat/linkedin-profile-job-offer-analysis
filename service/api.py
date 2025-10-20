@@ -3,6 +3,8 @@ from typing import List, Dict, Any
 import pandas as pd
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 
 from profile_ingest_pdf import run_to_df
 from quick_clean import clean_df
@@ -43,24 +45,25 @@ async def score_pdfs(
 ):
     tmpdir = tempfile.mkdtemp(prefix="pdf_ingest_")
     try:
-        # persist uploads
         for f in files:
             with open(os.path.join(tmpdir, f.filename), "wb") as fh:
                 fh.write(await f.read())
 
         df = run_to_df(tmpdir, "*.pdf")
-        df = _ensure_cols(df)
-        df = clean_df(df)
+        df = _ensure_cols(df).fillna("")               
+        df = clean_df(df).fillna("")
 
         cfg: Dict[str, Any] = dict(
             degree=degree, req=req, nice=nice, soft_req=soft_req,
             soft_nice=soft_nice, langs=langs, min_years=min_years, notes=notes
         )
         out = score_df(df, cfg).reset_index(drop=True)
-        return {
-            "count": len(out),
+        out = out.where(pd.notnull(out), None)       
+        payload = {
+            "count": int(len(out)),
             "top5": out.head(5).to_dict(orient="records"),
             "results": out.to_dict(orient="records"),
         }
+        return JSONResponse(content=jsonable_encoder(payload))
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)

@@ -282,12 +282,13 @@ def parse_pdf(path: str) -> dict:
     }
 
 def iter_pdf_paths(in_dir: str, pattern: str):
-    pats = [pattern]
-    if pattern.lower().endswith(".pdf"):
-        pats.append(pattern[:-4] + ".PDF")
-    for p in pats:
-        for path in glob.glob(os.path.join(in_dir, p)):
-            yield path
+    seen = set()
+    for path in glob.glob(os.path.join(in_dir, pattern)):
+        key = os.path.normcase(os.path.abspath(path))
+        if key in seen:
+            continue
+        seen.add(key)
+        yield path
 
 def run_to_df(in_dir: str, pattern: str = "*.pdf") -> pd.DataFrame:
     rows = [parse_pdf(path) for path in iter_pdf_paths(in_dir, pattern)]

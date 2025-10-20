@@ -1,7 +1,7 @@
 import re
 import pandas as pd
 
-_ADDR_PAT = r"(?i)(?!top skills)([A-ZÁÂÃÉÍÓÚ][\wÀ-ÿ .'-]+,\s*[A-ZÁÂÃÉÍÓÚ][\wÀ-ÿ .'-]+,\s*(Brasil|Brazil|Portugal|Spain|España))"
+_ADDR_PAT = r"(?i)([A-ZÁÂÃÉÍÓÚ][\wÀ-ÿ .'-]+,\s*[A-ZÁÂÃÉÍÓÚ][\wÀ-ÿ .'-]+,\s*(?:Brasil|Brazil|Portugal|Spain|España))"
 _DEG_PAT = r"(?i)(?:(?!(\d+\s+(anos?|years?)|\(\d+\s+year|\bJan|Feb|Mar|Abr|Apr|Mai|Jun|Jul|Ago|Aug|Sep|Out|Oct|Nov|Dez|Dec\b)).){0,20}" \
            r"(Bachelor|Master|MBA|B\.?Tech|Bacharel|Licenciatura|Mestrado|Doutor)[^|\n]{10,140}"
 
